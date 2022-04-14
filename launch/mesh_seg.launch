@@ -1,0 +1,19 @@
+<launch>
+  <!-- Triangle mesh in topic -->
+  <param name="input_mesh_topic" value="/vehicle/input_terrain_mesh" />
+  <!-- Odom topic -->
+  <param name="odom_topic" value="/X1/odom" />
+  <!-- Octree resolution -->
+  <param name="octree_resolution" value="0.02" />
+  <!-- Translation norm threshold -->
+  <param name="trans_norm_thresh" value="1.0" />
+  <!-- Number of points that changed threshold -->
+  <param name="num_points_changed_thresh" value="10000" />
+
+  <rosparam command="load" file="$(find mesh_segmentation_ros)/config/region_growing_config.yaml" />
+
+  <node name="mesh_segmentation_ros" pkg="mesh_segmentation_ros" type="mesh_seg_node" output="screen"> </node>
+  
+  <!-- Open RViz with config file -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find mesh_segmentation_ros)/rviz/mesh_seg.rviz"> </node>
+</launch>

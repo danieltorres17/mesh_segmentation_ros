@@ -1,0 +1,9 @@
+# Parameters for normal estimation
+numKNeighbors: 50
+
+# Parameters for region growing
+minClusterSize: 100
+maxClusterSize: 1000000
+numNeighbors: 50
+smoothnessThresholdFactor: 2.0
+curvatureThresholdFactor: 1.0
