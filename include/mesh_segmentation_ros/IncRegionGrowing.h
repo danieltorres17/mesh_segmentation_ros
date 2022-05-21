@@ -3,7 +3,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "mesh_segmentation_ros/MeshSegCommon.h"
 #include "mesh_segmentation_ros/MeshSeg.h"
 
 // Forward declaration to speed up compilation time.
@@ -12,24 +11,9 @@ class SegmentedCloud;
 /// \brief Generic incremental region growing segmenter.
 /// Extract segments by growing regions in the point cloud according to a specific policy. Allows
 /// to update already segmented clouds by segmenting new points only.
-template<typename ClusteredPointT, typename PolicyName>
-class IncrementalSegmenter : public Segmenter<ClusteredPointT> {
+class IncrementalSegmenter {
  public:
-  typedef pcl::PointCloud<ClusteredPointT> ClusteredCloud;
-  typedef RegionGrowingPolicy<PolicyName> Policy;
-
-  static_assert(pcl::traits::has_xyz<ClusteredPointT>::value,
-                "IncrementalSegmenter requires ClusteredPointT to contain XYZ coordinates.");
-
-  /// \brief Initializes a new instance of the IncrementalSegmenter class.
-  /// \param params The parameters of the segmenter.
-  explicit IncrementalSegmenter(const SegmenterParameters& params)
-    : params_(params)
-    , search_radius_(params.radius_for_growing)
-    , min_segment_size_(params.min_cluster_size)
-    , max_segment_size_(params.max_cluster_size)
-    , policy_params_(Policy::createParameters(params)) {
-  }
+  IncrementalSegmenter(const SegmenterParameters& params);
 
   /// \brief Cluster the given point cloud, writing the found segments in the segmented cloud. Only
   /// points that are not assigned to a cluster (have the PolicyName::getPointClusterId(point)
@@ -51,9 +35,8 @@ class IncrementalSegmenter : public Segmenter<ClusteredPointT> {
   /// operations. The first ID in each pair is the renamed segments, the second ID is the new
   /// segment ID.
   void segment(const CloudN& normals, const std::vector<bool>& is_point_modified,
-               CloudXYZL& cloud,
-               PCLKdTree& points_neighbors_provider,
-               SegmentedCloud& segmented_cloud,
+               CloudXYZL& cloud, PCLSearchTree& points_neighbors_provider,
+               CloudXYZL& segmented_cloud,
                std::vector<Id>& cluster_ids_to_segment_ids,
                std::vector<std::pair<Id, Id>>& renamed_segments) override;
 
@@ -90,17 +73,16 @@ class IncrementalSegmenter : public Segmenter<ClusteredPointT> {
   // Grows a region starting from the specified seed point. This finds all the new points belonging
   // to the same cluster and possibly links to existing clusters. The resulting partial cluster is
   // added to the \c partial_clusters vector.
-  void growRegionFromSeed(const PointNormals& normals, const ClusteredCloud& cloud,
-                          PointsNeighborsProvider<ClusteredPointT>& points_neighbors_provider,
+  void growRegionFromSeed(const CloudN& normals, const CloudXYZL& cloud,
+                          PCLSearchTree& points_neighbors_provider,
                           size_t seed_index, std::vector<bool>& processed,
                           PartialClusters& partial_clusters,
                           std::vector<std::pair<Id, Id>>& renamed_segments) const;
 
   // Clusters a point cloud. Only new or modified points are used as seeds.
-  void growRegions(const PointNormals& normals, const std::vector<bool>& is_point_modified,
-                   const std::vector<Id>& cluster_ids_to_segment_ids, ClusteredCloud& cloud,
-                   PointsNeighborsProvider<ClusteredPointT>& points_neighbors_provider,
-                   PartialClusters& partial_clusters,
+  void growRegions(const CloudN& normals, const std::vector<bool>& is_point_modified,
+                   const std::vector<Id>& cluster_ids_to_segment_ids, CloudXYZL& cloud,
+                   PCLSearchTree& points_neighbors_provider, PartialClusters& partial_clusters,
                    std::vector<std::pair<Id, Id>>& renamed_segments) const;
 
   // Assign cluster indices to the sets of partial clusters, so that linked clusters have the same
@@ -111,14 +93,14 @@ class IncrementalSegmenter : public Segmenter<ClusteredPointT> {
   // Write the cluster indices in the point cloud so that they can be reused in future
   // segmentations.
   void writeClusterIndicesToCloud(const PartialClusters& partial_clusters,
-                                  ClusteredCloud& cloud) const;
+                                  CloudXYZL& cloud) const;
 
   // Adds the segments to a segmented cloud and updates \c cluster_ids_to_segment_ids to reflect
   // the new mapping between cluster IDs and segment IDs.
-  void addSegmentsToSegmentedCloud(const ClusteredCloud& cloud,
+  void addSegmentsToSegmentedCloud(const CloudXYZL& cloud,
                                    const PartialClusters& partial_clusters, size_t num_clusters,
                                    std::vector<Id>& cluster_ids_to_segment_ids,
-                                   SegmentedCloud& segmented_cloud) const;
+                                   CloudXYZL& segmented_cloud) const;
 
   // Get the total number of points contained in the cluster of which the partial cluster at index
   // \i partial_cluster_index is part.
@@ -131,20 +113,19 @@ class IncrementalSegmenter : public Segmenter<ClusteredPointT> {
                                      size_t partial_cluster_index) const;
 
   // Determines if a point is assigned to a cluster or not.
-  bool isPointAssignedToCluster(const ClusteredPointT& point) const noexcept;
+  bool isPointAssignedToCluster(const PointXYZL& point) const noexcept;
 
   // Gets the cluster ID of a point.
-  ClusterId getClusterId(const ClusteredPointT& point) const noexcept;
+  ClusterId getClusterId(const PointXYZL& point) const noexcept;
 
   // Sets the cluster ID of a point.
-  void setClusterId(ClusteredPointT& point, ClusterId cluster_id) const noexcept;
+  void setClusterId(PointXYZL& point, ClusterId cluster_id) const noexcept;
 
   // Segmenter settings.
-  SegmenterParameters params_;
+  SegmenterParameters SegParams;
   const double search_radius_;
   const int min_segment_size_;
   const int max_segment_size_;
-  typename Policy::PolicyParameters policy_params_;
 
   static constexpr ClusterId kUnassignedClusterId = 0u;
 }; // class IncrementalSegmenter

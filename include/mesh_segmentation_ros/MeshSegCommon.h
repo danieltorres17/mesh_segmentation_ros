@@ -22,19 +22,13 @@ typedef pcl::Normal PointN;
 typedef pcl::PointCloud<PointXYZ> CloudXYZ;
 typedef CloudXYZ::Ptr CloudXYZPtr;
 typedef pcl::PointCloud<PointXYZL> CloudXYZL;
+typedef CloudXYZL::Ptr CloudXYZLPtr;
 typedef pcl::PointCloud<PointN> CloudN;
 typedef pcl::PointCloud<PointN>::Ptr CloudNPtr;
 typedef pcl::octree::OctreePointCloudChangeDetector<PointXYZL> OctreeChangeDetector;
 typedef pcl::search::Search<PointXYZL> PCLSearchTree;
 typedef pcl::search::KdTree<PointXYZL> PCLKdTree;
 typedef pcl::NormalEstimation<PointXYZL, PointN> PCLNormalEst;
-
-typedef pcl::PointXYZI PointI;
-typedef pcl::PointCloud<PointI> PointICloud;
-typedef std::pair<PointICloud, PointICloud> PointICloudPair;
-typedef PointICloud::Ptr PointICloudPtr;
-typedef std::pair<PointI, PointI> PointIPair;
-typedef std::vector<PointIPair> PointIPairs;
 
 typedef std::pair<PointXYZ, PointXYZ> PointPair;
 typedef std::vector<PointPair> PointPairs;
@@ -44,7 +38,7 @@ typedef std::vector<Eigen::Matrix4f,
 
 typedef std::pair<std::string, std::string> FilenamePair;
 
-typedef std::pair<PointICloudPtr, PointICloudPtr> CloudPair;
+typedef std::pair<CloudXYZLPtr, CloudXYZLPtr> CloudPair;
 
 /*
  * \brief Type representing IDs, for example for segments or clouds
@@ -68,8 +62,8 @@ class PairwiseMatch
 {
 public:
   PairwiseMatch(Id id1, Id id2, const PointXYZ& centroid1, const PointXYZ& centroid2,
-                float confidence_in) :
-                  ids_(id1, id2),
+                float confidence_in) 
+                : ids_(id1, id2),
                   confidence_(confidence_in),
                   centroids_(PointPair(centroid1, centroid2)) {}
 
