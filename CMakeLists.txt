@@ -125,6 +125,12 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+add_library(inc_norm_est src/IncNormalEst.cpp)
+target_link_libraries(inc_norm_est ${catkin_LIBRARIES})
+
+add_library(inc_region_growing src/IncRegionGrowing.cpp)
+target_link_libraries(inc_region_growing ${catkin_LIBRARIES})
+
 add_library(mesh_seg src/MeshSeg.cpp)
 target_link_libraries(mesh_seg ${catkin_LIBRARIES})
 

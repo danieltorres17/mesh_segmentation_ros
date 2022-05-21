@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /InputMesh1
         - /InputMesh1/Display Type1
+        - /GroundMesh1/Display Type1
       Splitter Ratio: 0.5
     Tree Height: 1442
   - Class: rviz/Selection
@@ -28,7 +29,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: DiffPointCloud
+    SyncSource: ""
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -76,9 +77,9 @@ Visualization Manager:
     - Class: rviz_mesh_plugin/TriangleMesh
       Display Type:
         Faces Alpha: 1
-        Faces Color: 0; 255; 0
+        Faces Color: 238; 238; 236
         Value: Fixed Color
-      Enabled: false
+      Enabled: true
       Mesh Buffer Size: 1
       Name: GroundMesh
       Show Normals:
@@ -90,14 +91,14 @@ Visualization Manager:
         Value: true
         Wireframe Alpha: 1
         Wireframe Color: 0; 0; 0
-      Topic: /ground_mesh
-      Value: false
+      Topic: /MeshSeg/ground_mesh
+      Value: true
     - Class: rviz_mesh_plugin/TriangleMesh
       Display Type:
         Faces Alpha: 1
         Faces Color: 0; 255; 0
         Value: Fixed Color
-      Enabled: false
+      Enabled: true
       Mesh Buffer Size: 1
       Name: ObstacleMesh
       Show Normals:
@@ -109,8 +110,8 @@ Visualization Manager:
         Value: true
         Wireframe Alpha: 1
         Wireframe Color: 0; 0; 0
-      Topic: /obstacle_mesh
-      Value: false
+      Topic: /MeshSeg/obstacle_mesh
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -239,6 +240,17 @@ Visualization Manager:
                 {}
       Update Interval: 0
       Value: true
+    - Alpha: 1
+      Class: rviz/PointStamped
+      Color: 204; 41; 204
+      Enabled: true
+      History Length: 1
+      Name: PointStamped
+      Queue Size: 10
+      Radius: 0.20000000298023224
+      Topic: /MeshSeg/kfPose
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -267,7 +279,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 9.061406135559082
+      Distance: 15.969294548034668
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -275,17 +287,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 3.309593439102173
-        Y: -3.23651123046875
-        Z: 3.2926266193389893
+        X: 7.280536651611328
+        Y: 0.3871040940284729
+        Z: 3.4508962631225586
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5053983330726624
+      Pitch: 0.46539831161499023
       Target Frame: <Fixed Frame>
-      Yaw: 3.2703914642333984
+      Yaw: 2.1553871631622314
     Saved: ~
 Window Geometry:
   Displays:

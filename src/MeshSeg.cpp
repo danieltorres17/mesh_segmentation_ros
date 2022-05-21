@@ -26,8 +26,9 @@ MeshSeg::MeshSeg(ros::NodeHandle& nodehandle)
   m_kfPosePub = nh.advertise<geometry_msgs::PointStamped>(m_nodeName + "/kfPose", 5);
   m_groundMeshPub = nh.advertise<mesh_msgs::TriangleMeshStamped>(m_nodeName + "/ground_mesh", 5);
   m_obstacleMeshPub = nh.advertise<mesh_msgs::TriangleMeshStamped>(m_nodeName + "/obstacle_mesh", 5);
-  m_meshAPCPub = nh.advertise<sensor_msgs::PointCloud2>(m_nodeName + "/meshA_points", 5);
-  m_meshBPCPub = nh.advertise<sensor_msgs::PointCloud2>(m_nodeName + "/meshB_points", 5);
+  m_changedTrianglesPub = nh.advertise<mesh_msgs::TriangleMeshStamped>(m_nodeName + "/changed_mesh", 5);
+  m_cloudAPub = nh.advertise<sensor_msgs::PointCloud2>(m_nodeName + "/meshA_points", 5);
+  m_cloudBPub = nh.advertise<sensor_msgs::PointCloud2>(m_nodeName + "/meshB_points", 5);
 
   // initialize point clouds
   cloudA = CloudXYZL::Ptr (new CloudXYZL);
@@ -66,7 +67,7 @@ void MeshSeg::OdomCallback(const nav_msgs::Odometry::ConstPtr& msg)
   geometry_msgs::Point currPose = msg->pose.pose.position;
   // vector to hold translation differences
   Eigen::Vector3d diff(currPose.x-m_lastPose.x, currPose.y-m_lastPose.y, currPose.z-m_lastPose.z);
-  // calculate translation
+  // calculate translation norm
   m_norm += diff.norm();
   // check difference 
   if (m_norm > m_normThresh)
@@ -85,7 +86,9 @@ void MeshSeg::OdomCallback(const nav_msgs::Odometry::ConstPtr& msg)
     m_kfPosePub.publish(pose_msg);
 
     // update last position
-    m_lastPose = currPose;
+    m_lastPose.x = currPose.x;
+    m_lastPose.y = currPose.y;
+    m_lastPose.z = currPose.z;
     m_norm = 0;
   }
 }
@@ -165,8 +168,136 @@ void MeshSeg::MeshCallback(const mesh_msgs::TriangleMeshStamped::ConstPtr& msg)
     pcl::toROSMsg(cloud_changed_pc, cloud_changed);
     cloud_changed.header.stamp = ros::Time::now();
     cloud_changed.header.frame_id = msg->header.frame_id;
-    m_meshBPCPub.publish(cloud_changed);
+    m_cloudBPub.publish(cloud_changed);
   }
+  // // new cloud to store mesh triangle centroids in
+  // pcl::PointCloud<pcl::PointXYZL>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZL>);
+  // uint numMeshPts = msg->mesh.triangles.size();
+  // cloud->points.reserve(numMeshPts);
+
+  // std::cout << "Mesh frame: " << msg->header.frame_id << std::endl;
+  // std::cout << msg->mesh.triangles.size() << std::endl;
+
+  // // push centroid of each triangle in mesh to cloud with index i as label
+  // for (uint i=0; i < numMeshPts; i++)
+  // {
+  //   // get vertices for all three points
+  //   geometry_msgs::Point vertex0 = msg->mesh.vertices[msg->mesh.triangles[i].vertex_indices[0]];
+  //   geometry_msgs::Point vertex1 = msg->mesh.vertices[msg->mesh.triangles[i].vertex_indices[1]];
+  //   geometry_msgs::Point vertex2 = msg->mesh.vertices[msg->mesh.triangles[i].vertex_indices[2]];
+    
+  //   // centroid point with x, y, z coords and label
+  //   pcl::PointXYZL pt;
+  //   pt.x = (vertex0.x + vertex1.x + vertex2.x) / 3;
+  //   pt.y = (vertex0.y + vertex1.y + vertex2.y) / 3;
+  //   pt.z = (vertex0.z + vertex1.z + vertex2.z) / 3;
+  //   pt.label = i;
+  //   cloud->push_back(pt);
+  // }
+
+  // // run region growing
+  // pcl::search::Search<pcl::PointXYZL>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZL>);
+  // pcl::PointCloud <pcl::Normal>::Ptr normals(new pcl::PointCloud <pcl::Normal>);
+  // normals->points.reserve(numMeshPts);
+  // pcl::NormalEstimation<pcl::PointXYZL, pcl::Normal> normal_estimator;
+  // normal_estimator.setSearchMethod(tree);
+  // normal_estimator.setInputCloud(cloud);
+  // normal_estimator.setKSearch(50);
+  // normal_estimator.compute(*normals);
+
+  // pcl::IndicesPtr indices(new std::vector <int>);
+  // // pcl::PassThrough<pcl::PointXYZL> pass;
+  // // pass.setInputCloud(cloud);
+  // // pass.setFilterFieldName("z");
+  // // pass.setFilterLimits(0.0, 12.0);
+  // // pass.filter(*indices);
+
+  // pcl::RegionGrowing<pcl::PointXYZL, pcl::Normal> reg;
+  // reg.setMinClusterSize(100);
+  // reg.setMaxClusterSize(1000000);
+  // reg.setSearchMethod(tree);
+  // reg.setNumberOfNeighbours(50);
+  // reg.setInputCloud(cloud);
+  // reg.setIndices(indices);
+  // reg.setInputNormals(normals);
+  // reg.setSmoothnessThreshold(2.0 / 180.0 * M_PI);
+  // reg.setCurvatureThreshold(1.0);
+
+  // // extract clusters from cloud
+  // std::vector<pcl::PointIndices> clusters;
+  // reg.extract(clusters);
+
+  // // // make cloud from indices
+  // // CloudT::Ptr roi(new CloudT);
+  // // roi->reserve(clusters[0].indices.size());
+  // // for (auto idx : clusters[0].indices)
+  // // {
+  // //   pcl::PointXYZ pt(cloud->points[idx].x, cloud->points[idx].y, cloud->points[idx].z);
+  // //   roi->push_back(pt);
+  // // }
+  // // roi->is_dense = true;
+
+  // // make new mesh from extracted points
+  // mesh_msgs::TriangleMeshStamped tmp_mesh_msg;
+  // tmp_mesh_msg.header.stamp = ros::Time::now();
+  // tmp_mesh_msg.header.frame_id = msg->header.frame_id;
+
+  // // for all cloud PC indices in cluster[0], extract face info and push into ground mesh message
+  // for (auto idx : clusters[0].indices)
+  // {
+  //   // get point label
+  //   uint midx = cloud->points[idx].label;
+  //   // use label to access corresponding face
+  //   geometry_msgs::Point vertex0 = msg->mesh.vertices[msg->mesh.triangles[midx].vertex_indices[0]];
+  //   geometry_msgs::Point vertex1 = msg->mesh.vertices[msg->mesh.triangles[midx].vertex_indices[1]];
+  //   geometry_msgs::Point vertex2 = msg->mesh.vertices[msg->mesh.triangles[midx].vertex_indices[2]];
+    
+  //   mesh_msgs::TriangleIndices tidxs;
+  //   // point 0 
+  //   tidxs.vertex_indices[0] = tmp_mesh_msg.mesh.vertices.size();
+  //   tmp_mesh_msg.mesh.vertices.push_back(vertex0);
+  //   // point 1
+  //   tidxs.vertex_indices[1] = tmp_mesh_msg.mesh.vertices.size();
+  //   tmp_mesh_msg.mesh.vertices.push_back(vertex1);
+  //   // point 2
+  //   tidxs.vertex_indices[2] = tmp_mesh_msg.mesh.vertices.size();
+  //   tmp_mesh_msg.mesh.vertices.push_back(vertex2);
+  //   // push triangle index into message
+  //   tmp_mesh_msg.mesh.triangles.push_back(tidxs);
+  // }
+  // m_groundMeshPub.publish(tmp_mesh_msg);
+
+  // // publish rest of clusters as obstacle mesh
+  // mesh_msgs::TriangleMeshStamped obs_mesh_msg;
+  // obs_mesh_msg.header.stamp = ros::Time::now();
+  // obs_mesh_msg.header.frame_id = msg->header.frame_id;
+  // for (uint i=1; i < clusters.size(); i++)
+  // {
+  //   // for all cloud PC indices in cluster[i], extract face info and push into obstacle mesh message
+  //   for (auto idx : clusters[i].indices)
+  //   {
+  //     // get point label
+  //     uint midx = cloud->points[idx].label;
+  //     // use label to access corresponding face
+  //     geometry_msgs::Point vertex0 = msg->mesh.vertices[msg->mesh.triangles[midx].vertex_indices[0]];
+  //     geometry_msgs::Point vertex1 = msg->mesh.vertices[msg->mesh.triangles[midx].vertex_indices[1]];
+  //     geometry_msgs::Point vertex2 = msg->mesh.vertices[msg->mesh.triangles[midx].vertex_indices[2]];
+      
+  //     mesh_msgs::TriangleIndices tidxs;
+  //     // point 0 
+  //     tidxs.vertex_indices[0] = obs_mesh_msg.mesh.vertices.size();
+  //     obs_mesh_msg.mesh.vertices.push_back(vertex0);
+  //     // point 1
+  //     tidxs.vertex_indices[1] = obs_mesh_msg.mesh.vertices.size();
+  //     obs_mesh_msg.mesh.vertices.push_back(vertex1);
+  //     // point 2
+  //     tidxs.vertex_indices[2] = obs_mesh_msg.mesh.vertices.size();
+  //     obs_mesh_msg.mesh.vertices.push_back(vertex2);
+  //     // push triangle index into message
+  //     obs_mesh_msg.mesh.triangles.push_back(tidxs);
+  //   }
+  // }
+  // m_obstacleMeshPub.publish(obs_mesh_msg);
 }
 
 void MeshSeg::pubChangedPtsCloud()
@@ -176,5 +307,5 @@ void MeshSeg::pubChangedPtsCloud()
   pcl::toROSMsg(*cloudChangedPts, cloud_out);
   cloud_out.header.stamp = ros::Time::now();
   cloud_out.header.frame_id = "inf_map";
-  m_meshAPCPub.publish(cloud_out);
+  m_cloudAPub.publish(cloud_out);
 }
