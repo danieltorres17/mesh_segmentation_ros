@@ -60,9 +60,9 @@ private:
   double rg_curvThreshFactor;
 
   // region growing
-  pcl::IndicesPtr rg_indices;
-  PCLSearchTree::Ptr rg_searchTree;
-  CloudN::Ptr rg_normals;
+  pcl::IndicesPtr rg_indices = nullptr;
+  PCLSearchTree::Ptr rg_searchTree = nullptr;
+  CloudN::Ptr rg_normals = nullptr;
   PCLNormalEst rg_normEst;
   pcl::RegionGrowing<PointXYZL, PointN> rg_regionGrowing;
 };

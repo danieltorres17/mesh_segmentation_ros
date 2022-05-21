@@ -17,7 +17,7 @@ public:
   
   // Notifies the estimator that points have been transformed
   // Transformation linear 
-  void notifyPointsTransformed();
+  void notifyPointsTransformed(Eigen::Matrix4d& transformation);
   // clear all the normals and the associated information.
   // Equivalent to removing all the points from the cloud
   void clear();
@@ -42,7 +42,7 @@ private:
   // partial covariance matrix information for incremental estimation
   // the covariance matrix is computed as
   // C = E[X*X^T] - mu*mu^t = num_points * sum_X_Xt + num_points^2 * sum_X * sum_Xt
-  std::vector<Eigen::Matrix3f, Eigen::aligned_allocator<Eigen::Matrix3f>> sum_X_Xt;
-  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> sum_X;
+  std::vector<Eigen::Matrix3f, Eigen::aligned_allocator<Eigen::Matrix3f>> m_sum_X_Xt;
+  std::vector<Eigen::Vector3f, Eigen::aligned_allocator<Eigen::Vector3f>> m_sum_X;
   std::vector<size_t> m_numPoints;
 };

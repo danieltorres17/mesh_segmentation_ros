@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include "MeshSeg.h"
+#include "mesh_segmentation_ros/MeshSeg.h"
 
 int main(int argc, char** argv)
 {

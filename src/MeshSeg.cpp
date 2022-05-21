@@ -1,4 +1,4 @@
-#include "MeshSeg.h"
+#include "mesh_segmentation_ros/MeshSeg.h"
 
 MeshSeg::MeshSeg(ros::NodeHandle& nodehandle)
 : nh(nodehandle)
