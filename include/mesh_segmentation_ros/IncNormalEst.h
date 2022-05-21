@@ -7,7 +7,7 @@ https://github.com/ethz-asl/segmap/blob/master/segmatch/include/segmatch/normal_
 #include <pcl/features/normal_3d.h>
 #include <pcl/search/kdtree.h>
 
-#include "mesh_segmentation_ros/IncNormalEst.h"
+#include "mesh_segmentation_ros/MeshSegCommon.h"
 
 class IncNormalEst
 {
